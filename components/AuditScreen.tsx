@@ -8,6 +8,7 @@ interface AuditScreenProps {
   onFinish: () => void;
   onBack: () => void;
   vehicleId: string;
+  storageLocation: string;
 }
 
 // Global pool with location metadata for auditing
@@ -21,14 +22,14 @@ const GLOBAL_EXTINGUISHERS_POOL: Partial<Extinguisher>[] = [
   { serialNumber: '12345', materialNumber: 'M-100', name: 'מטף ראשי' }
 ];
 
-const StatusBadge: React.FC<{ status?: LocationStatus; name?: string }> = ({ status, name }) => {
+const StatusBadge: React.FC<{ status?: LocationStatus; name?: string; storageLocation?: string }> = ({ status, name, storageLocation }) => {
   switch (status) {
     case 'current_vehicle':
       return <span className="bg-emerald-500/20 text-emerald-400 text-[8px] px-2 py-0.5 rounded-full font-black border border-emerald-500/30">על כלי זה</span>;
     case 'other_vehicle':
       return <span className="bg-amber-500/20 text-amber-400 text-[8px] px-2 py-0.5 rounded-full font-black border border-amber-500/30">{name || 'כלי אחר'}</span>;
     case 'unit_stock':
-      return <span className="bg-blue-500/20 text-blue-400 text-[8px] px-2 py-0.5 rounded-full font-black border border-blue-500/30">מלאי יחידה</span>;
+      return <span className="bg-blue-500/20 text-blue-400 text-[8px] px-2 py-0.5 rounded-full font-black border border-blue-500/30 whitespace-nowrap">באתר אחסון {storageLocation || 'יחידה'}</span>;
     case 'in_air':
       return <span className="bg-slate-500/20 text-slate-400 text-[8px] px-2 py-0.5 rounded-full font-black border border-slate-500/30">באוויר</span>;
     default:
@@ -36,11 +37,11 @@ const StatusBadge: React.FC<{ status?: LocationStatus; name?: string }> = ({ sta
   }
 };
 
-const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, onBack, vehicleId }) => {
+const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, onBack, vehicleId, storageLocation }) => {
   const [showSuggestionsFor, setShowSuggestionsFor] = useState<string | null>(null);
 
   const toggleStatus = (id: string, status: 'ok' | 'anomaly') => {
-    setItems(prev => prev.map(item => 
+    setItems(prev => prev.map(item =>
       item.id === id ? { ...item, status, actualSerialNumber: status === 'ok' ? '' : item.actualSerialNumber, actualMaterialNumber: '' } : item
     ));
     if (status === 'anomaly') {
@@ -53,16 +54,16 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
   const updateActualId = (id: string, actualId: string, fromSuggestion = false, suggestionMaterial?: string) => {
     setItems(prev => prev.map(item => {
       if (item.id === id) {
-        return { 
-          ...item, 
-          actualSerialNumber: actualId, 
-          actualMaterialNumber: fromSuggestion ? (suggestionMaterial || '') : item.actualMaterialNumber 
+        return {
+          ...item,
+          actualSerialNumber: actualId,
+          actualMaterialNumber: fromSuggestion ? (suggestionMaterial || '') : item.actualMaterialNumber
         };
       }
       return item;
     }));
     if (fromSuggestion) {
-      setShowSuggestionsFor(null); 
+      setShowSuggestionsFor(null);
     }
   };
 
@@ -119,24 +120,22 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
                   )}
                 </div>
               </div>
-              
+
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => toggleStatus(item.id, 'anomaly')}
-                  className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all backdrop-blur-md ${
-                    item.status === 'anomaly' ? 'bg-red-600 border-red-400 scale-105 shadow-lg shadow-red-900/40' : 'bg-black/40 border-white/10 active:bg-white/10'
-                  }`}
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all backdrop-blur-md ${item.status === 'anomaly' ? 'bg-red-600 border-red-400 scale-105 shadow-lg shadow-red-900/40' : 'bg-black/40 border-white/10 active:bg-white/10'
+                    }`}
                 >
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => toggleStatus(item.id, 'ok')}
-                  className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all backdrop-blur-md ${
-                    item.status === 'ok' ? 'bg-emerald-600 border-emerald-400 scale-105 shadow-lg shadow-emerald-900/40' : 'bg-black/40 border-white/10 active:bg-white/10'
-                  }`}
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center border-2 transition-all backdrop-blur-md ${item.status === 'ok' ? 'bg-emerald-600 border-emerald-400 scale-105 shadow-lg shadow-emerald-900/40' : 'bg-black/40 border-white/10 active:bg-white/10'
+                    }`}
                 >
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
@@ -151,7 +150,7 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
                   <label className="block text-slate-400 text-xs font-black mb-2 mr-1 uppercase tracking-tighter opacity-70">
                     הזן מס"ד שנמצא בפועל (או השאר ריק אם אין מטף):
                   </label>
-                  <input 
+                  <input
                     type="text"
                     placeholder="הקלד מספר מס״ד..."
                     value={item.actualSerialNumber || ''}
@@ -162,7 +161,7 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
                     }}
                     className="w-full bg-black/40 backdrop-blur-md border-2 border-white/10 rounded-2xl p-4 text-xl font-black text-white outline-none focus:border-red-500 transition-all placeholder:text-slate-800"
                   />
-                  
+
                   {showSuggestionsFor === item.id && item.actualSerialNumber && item.actualSerialNumber.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border-2 border-slate-700 rounded-2xl overflow-hidden shadow-2xl z-20 max-h-56 overflow-y-auto scrollbar-hide animate-in fade-in slide-in-from-top-2">
                       <div className="bg-slate-800 px-4 py-2 text-[9px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-700 flex justify-between">
@@ -178,19 +177,19 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
                             className="w-full p-4 text-right hover:bg-slate-800 text-slate-200 font-bold border-b border-slate-800 last:border-0 transition-colors flex justify-between items-center group"
                           >
                             <div className="flex-1">
-                               <div className="flex items-center gap-2 mb-1">
-                                 <div className="text-lg font-black text-white tracking-tighter">
-                                   <span className="text-slate-500 text-[10px] ml-1 font-bold">מס"ד:</span>
-                                   {suggestion.serialNumber}
-                                 </div>
-                                 <StatusBadge status={suggestion.locationStatus} name={suggestion.locationName} />
-                               </div>
-                               {suggestion.materialNumber && (
-                                 <div className="text-xs font-black text-orange-500 tracking-tighter">
-                                   <span className="text-orange-500/50 text-[8px] ml-1 font-bold">מק"ט:</span>
-                                   {suggestion.materialNumber}
-                                 </div>
-                               )}
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="text-lg font-black text-white tracking-tighter">
+                                  <span className="text-slate-500 text-[10px] ml-1 font-bold">מס"ד:</span>
+                                  {suggestion.serialNumber}
+                                </div>
+                                <StatusBadge status={suggestion.locationStatus} name={suggestion.locationName} storageLocation={storageLocation} />
+                              </div>
+                              {suggestion.materialNumber && (
+                                <div className="text-xs font-black text-orange-500 tracking-tighter">
+                                  <span className="text-orange-500/50 text-[8px] ml-1 font-bold">מק"ט:</span>
+                                  {suggestion.materialNumber}
+                                </div>
+                              )}
                             </div>
                             <svg className="w-4 h-4 text-slate-700 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" />
@@ -210,7 +209,7 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
                         פריט לא מוכר - חובה להזין מק"ט (MATERIAL):
                       </label>
                     </div>
-                    <input 
+                    <input
                       type="text"
                       placeholder="הזן מספר מק״ט של המטף שנמצא..."
                       value={item.actualMaterialNumber || ''}
@@ -230,9 +229,8 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
       <button
         disabled={!allChecked}
         onClick={onFinish}
-        className={`mt-6 w-full py-6 shrink-0 rounded-3xl text-2xl font-black transition-all shadow-xl ${
-          allChecked ? 'bg-orange-500 text-white shadow-orange-500/20 border-b-4 border-orange-700 active:translate-y-1 active:border-b-0 cursor-pointer' : 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed opacity-50'
-        }`}
+        className={`mt-6 w-full py-6 shrink-0 rounded-3xl text-2xl font-black transition-all shadow-xl ${allChecked ? 'bg-orange-500 text-white shadow-orange-500/20 border-b-4 border-orange-700 active:translate-y-1 active:border-b-0 cursor-pointer' : 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed opacity-50'
+          }`}
       >
         סיום מיפוי והמשך
       </button>

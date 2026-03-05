@@ -9,13 +9,15 @@ export enum FlowStep {
   AUDIT_SUMMARY = 'AUDIT_SUMMARY',
   DISASSEMBLE_REASON = 'DISASSEMBLE_REASON',
   NEXT_VEHICLE = 'NEXT_VE_INPUT',
-  BATCH_SUMMARY = 'BATCH_SUMMARY'
+  BATCH_SUMMARY = 'BATCH_SUMMARY',
+  COUNTER_REPORTING = 'COUNTER_REPORTING'
 }
 
 export enum ActionType {
   DISASSEMBLE = 'DISASSEMBLE',
   ASSEMBLE = 'ASSEMBLE',
-  AUDIT = 'AUDIT'
+  AUDIT = 'AUDIT',
+  COUNTER_REPORTING = 'COUNTER_REPORTING'
 }
 
 export type CounterType = 'שע"מ' | 'ק"מ' | 'מייל';
@@ -35,8 +37,8 @@ export interface Extinguisher {
   status?: 'ok' | 'anomaly' | null;
   actualSerialNumber?: string;
   actualMaterialNumber?: string;
-  counters?: CounterValue[]; 
-  requiredCounters?: CounterType[]; 
+  counters?: CounterValue[];
+  requiredCounters?: CounterType[];
   isNew?: boolean;
   locationStatus?: LocationStatus;
   locationName?: string;
@@ -56,4 +58,14 @@ export interface BatchStats {
   anomaliesFound: number;
   vehiclesList: string[];
   anomaliesList: AnomalyDetail[];
+}
+
+export interface LastAction {
+  type: string;
+  timestamp: string;
+  details?: {
+    oldSerial?: string;
+    newSerial?: string;
+    newMaterial?: string;
+  }
 }
