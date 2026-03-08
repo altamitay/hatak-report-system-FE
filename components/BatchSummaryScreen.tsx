@@ -22,18 +22,18 @@ const BatchSummaryScreen: React.FC<BatchSummaryScreenProps> = ({ stats, onFinish
       </div>
 
       <h2 className="text-3xl font-black text-white mb-3 shrink-0">סבב מיפויים הושלם!</h2>
-      
+
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 w-full max-w-sm mb-4 shrink-0">
         <div className="bg-white/5 backdrop-blur-xl p-4 rounded-3xl border border-white/10 flex flex-col items-center justify-center shadow-xl relative overflow-hidden">
-           <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent pointer-events-none"></div>
-           <div className="text-3xl font-black text-orange-500 mb-0.5 relative z-10">{stats.vehiclesCount}</div>
-           <div className="text-slate-400 font-bold text-[9px] uppercase tracking-widest leading-none relative z-10 opacity-70">כלים נבדקו</div>
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent pointer-events-none"></div>
+          <div className="text-3xl font-black text-orange-500 mb-0.5 relative z-10">{stats.vehiclesCount}</div>
+          <div className="text-slate-400 font-bold text-[9px] uppercase tracking-widest leading-none relative z-10 opacity-70">כלים נבדקו</div>
         </div>
         <div className="bg-white/5 backdrop-blur-xl p-4 rounded-3xl border border-white/10 flex flex-col items-center justify-center shadow-xl relative overflow-hidden">
-           <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent pointer-events-none"></div>
-           <div className="text-3xl font-black text-red-400 mb-0.5 relative z-10">{stats.anomaliesFound}</div>
-           <div className="text-slate-400 font-bold text-[9px] uppercase tracking-widest leading-none relative z-10 opacity-70">החלפות דווחו</div>
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent pointer-events-none"></div>
+          <div className="text-3xl font-black text-red-400 mb-0.5 relative z-10">{stats.anomaliesFound}</div>
+          <div className="text-slate-400 font-bold text-[9px] uppercase tracking-widest leading-none relative z-10 opacity-70">החלפות דווחו</div>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ const BatchSummaryScreen: React.FC<BatchSummaryScreenProps> = ({ stats, onFinish
       <div className="w-full max-w-sm space-y-3 mb-8 text-right">
         {/* Vehicles List Toggle */}
         <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-lg">
-          <button 
+          <button
             onClick={() => setShowVehicles(!showVehicles)}
             className="w-full px-5 py-4 flex items-center justify-between text-slate-300 font-bold hover:bg-white/5 transition-colors"
           >
@@ -53,7 +53,7 @@ const BatchSummaryScreen: React.FC<BatchSummaryScreenProps> = ({ stats, onFinish
             </div>
             <span className="text-xs bg-black/40 px-2 py-0.5 rounded-full text-slate-500 font-black">{stats.vehiclesList.length}</span>
           </button>
-          
+
           {showVehicles && (
             <div className="px-5 pb-4 pt-1 flex flex-wrap gap-2 animate-in slide-in-from-top-2 duration-200">
               {stats.vehiclesList.length > 0 ? (
@@ -71,7 +71,7 @@ const BatchSummaryScreen: React.FC<BatchSummaryScreenProps> = ({ stats, onFinish
 
         {/* Anomalies List Toggle */}
         <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-lg">
-          <button 
+          <button
             onClick={() => setShowAnomalies(!showAnomalies)}
             className="w-full px-5 py-4 flex items-center justify-between text-slate-300 font-bold hover:bg-white/5 transition-colors"
           >
@@ -85,7 +85,7 @@ const BatchSummaryScreen: React.FC<BatchSummaryScreenProps> = ({ stats, onFinish
               {stats.anomaliesList.length}
             </span>
           </button>
-          
+
           {showAnomalies && (
             <div className="px-5 pb-5 pt-2 space-y-3 animate-in slide-in-from-top-2 duration-200">
               {stats.anomaliesList.length > 0 ? (
@@ -106,10 +106,10 @@ const BatchSummaryScreen: React.FC<BatchSummaryScreenProps> = ({ stats, onFinish
                       <div className="flex flex-col text-left">
                         <span className="text-[8px] text-orange-500 font-bold uppercase mb-0.5 opacity-70">מס"ד שנמצא</span>
                         <div className="flex items-center gap-2">
-                           <span className="text-sm font-black text-emerald-400">{a.newSerial === '---' ? 'חסר' : a.newSerial}</span>
-                           {a.newMaterial && (
-                             <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1 rounded uppercase font-bold">מק"ט: {a.newMaterial}</span>
-                           )}
+                          <span className="text-sm font-black text-emerald-400">{a.newSerial === '---' ? 'חסר' : a.newSerial}</span>
+                          {a.newMaterial && (
+                            <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1 rounded uppercase font-bold">מק"ט: {a.newMaterial}</span>
+                          )}
                         </div>
                       </div>
                     </div>

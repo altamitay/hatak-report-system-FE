@@ -10,6 +10,23 @@ import AuditSummaryScreen from './components/AuditSummaryScreen';
 import NextVehicleScreen from './components/NextVehicleScreen';
 import BatchSummaryScreen from './components/BatchSummaryScreen';
 import DisassembleReasonScreen from './components/DisassembleReasonScreen';
+import SymbolAuditListScreen from './components/SymbolAuditListScreen';
+
+interface SymbolVehicle extends Extinguisher {
+  tempVehicleId: string;
+  isDone: boolean;
+  lastAudit?: string;
+  actualSerialNumber?: string;
+  actualMaterialNumber?: string;
+}
+
+// Enhanced Mock Data for Symbol Audit
+const SYMBOL_VEHICLES: SymbolVehicle[] = [
+  { tempVehicleId: '776-554', id: 'v1', name: 'מטף ראשי', serialNumber: 'S-1001', materialNumber: 'MAT-101', requiredCounters: ['שע"מ', 'ק"מ'], locationStatus: 'current_vehicle' as const, isDone: false, lastAudit: '01/03/24 08:30' },
+  { tempVehicleId: '112-233', id: 'v2', name: 'מטף ראשי', serialNumber: 'S-2001', materialNumber: 'MAT-202', requiredCounters: ['שע"מ', 'ק"מ'], locationStatus: 'current_vehicle' as const, isDone: false, lastAudit: '15/02/24 14:20' },
+  { tempVehicleId: '554-123', id: 'v3', name: 'מטף ראשי', serialNumber: '12345', materialNumber: 'M-100', requiredCounters: ['שע"מ', 'ק"מ'], locationStatus: 'current_vehicle' as const, isDone: false, lastAudit: '10/01/24 11:00' },
+  { tempVehicleId: '998-112', id: 'v4', name: 'מטף ראשי', serialNumber: 'S-9999', materialNumber: 'MAT-909', requiredCounters: ['שע"מ', 'ק"מ'], locationStatus: 'current_vehicle' as const, isDone: false, lastAudit: '28/02/24 09:45' },
+];
 
 // Each vehicle now has exactly one extinguisher as per user requirement
 const VEHICLE_EXTINGUISHERS: Extinguisher[] = [
@@ -29,6 +46,8 @@ const App: React.FC = () => {
   const [selectedExtinguisher, setSelectedExtinguisher] = useState<Extinguisher | null>(null);
   const [disassembleReason, setDisassembleReason] = useState<string | null>(null);
   const [currentVehicleId, setCurrentVehicleId] = useState('123456');
+
+  const [symbolVehicles, setSymbolVehicles] = useState(SYMBOL_VEHICLES);
 
   const [auditList, setAuditList] = useState<Extinguisher[]>(VEHICLE_EXTINGUISHERS);
   const [batchStats, setBatchStats] = useState<BatchStats>({
@@ -51,9 +70,20 @@ const App: React.FC = () => {
 
   const handleActionSelect = (type: ActionType) => {
     setAction(type);
-    if (type === ActionType.AUDIT) {
+    if (type === ActionType.SINGLE_VEHICLE_AUDIT) {
       setAuditList(VEHICLE_EXTINGUISHERS.map(e => ({ ...e, status: null, actualSerialNumber: '', actualMaterialNumber: '' })));
       setCurrentStep(FlowStep.AUDIT_CHECK);
+    } else if (type === ActionType.SYMBOL_AUDIT) {
+      setSymbolVehicles(prev => prev.map(v => ({
+        ...v,
+        // Update baseline with last known actuals if we are starting a fresh session
+        serialNumber: v.actualSerialNumber || v.serialNumber,
+        materialNumber: v.actualMaterialNumber || v.materialNumber,
+        actualSerialNumber: undefined,
+        actualMaterialNumber: undefined,
+        isDone: false
+      })));
+      setCurrentStep(FlowStep.SYMBOL_AUDIT_LIST);
     } else if (type === ActionType.COUNTER_REPORTING) {
       setSelectedExtinguisher({
         id: 'vehicle-meters',
@@ -78,7 +108,24 @@ const App: React.FC = () => {
 
   const handleReasonSelect = (reason: string, destination: string) => {
     setDisassembleReason(reason);
-    // Optionally store destination if needed for summary, for now we just proceed
+    setCurrentStep(FlowStep.DATA_ENTRY);
+  };
+
+  const handleSymbolVehicleSelect = (vId: string, isAnomaly: boolean, newSerial?: string, newMaterial?: string) => {
+    const vehicle = symbolVehicles.find(v => v.tempVehicleId === vId);
+    if (!vehicle) return;
+
+    setCurrentVehicleId(vId);
+
+    // Prepare the selected item for DataEntry
+    const itemToReport: Extinguisher = isAnomaly ? {
+      ...vehicle,
+      serialNumber: newSerial!,
+      materialNumber: newMaterial || vehicle.materialNumber,
+      isNew: true
+    } : { ...vehicle };
+
+    setSelectedExtinguisher(itemToReport);
     setCurrentStep(FlowStep.DATA_ENTRY);
   };
 
@@ -96,15 +143,23 @@ const App: React.FC = () => {
       itemName: e.name
     }));
 
-    setBatchStats(prev => ({
-      vehiclesCount: prev.vehiclesCount + 1,
-      extinguishersChecked: prev.extinguishersChecked + auditList.length,
-      anomaliesFound: prev.anomaliesFound + anomalies.length,
-      vehiclesList: [...prev.vehiclesList, currentVehicleId],
-      anomaliesList: [...prev.anomaliesList, ...newAnomalyDetails]
-    }));
-    // Fix: Using FlowStep.NEXT_VEHICLE as defined in types.ts instead of FlowStep.NEXT_VE_INPUT
-    setCurrentStep(FlowStep.NEXT_VEHICLE);
+    setBatchStats(prev => {
+      const updatedStats = {
+        vehiclesCount: prev.vehiclesCount + 1,
+        extinguishersChecked: prev.extinguishersChecked + auditList.length,
+        anomaliesFound: prev.anomaliesFound + anomalies.length,
+        vehiclesList: [...prev.vehiclesList, currentVehicleId],
+        anomaliesList: [...prev.anomaliesList, ...newAnomalyDetails]
+      };
+
+      if (action === ActionType.SINGLE_VEHICLE_AUDIT) {
+        setCurrentStep(FlowStep.BATCH_SUMMARY);
+      } else {
+        setCurrentStep(FlowStep.NEXT_VEHICLE);
+      }
+
+      return updatedStats;
+    });
   };
 
   const handleNewVehicle = (newId: string) => {
@@ -125,6 +180,62 @@ const App: React.FC = () => {
       anomaliesList: []
     });
     setCurrentStep(FlowStep.TRIGGER);
+  };
+
+  const handleDataEntryConfirm = (counters: CounterValue[]) => {
+    if (selectedExtinguisher) {
+      // Logic for Symbol Audit: Update progress
+      if (action === ActionType.SYMBOL_AUDIT) {
+        setSymbolVehicles(prev => prev.map(v =>
+          v.tempVehicleId === currentVehicleId ? {
+            ...v,
+            isDone: true,
+            actualSerialNumber: selectedExtinguisher.serialNumber,
+            actualMaterialNumber: selectedExtinguisher.materialNumber,
+            lastAudit: new Date().toLocaleDateString('he-IL') + ' ' + new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+          } : v
+        ));
+
+        // Update Batch Stats for the summary
+        setBatchStats(prev => ({
+          ...prev,
+          vehiclesCount: prev.vehiclesCount + 1,
+          extinguishersChecked: prev.extinguishersChecked + 1,
+          anomaliesFound: prev.anomaliesFound + (selectedExtinguisher.isNew ? 1 : 0),
+          vehiclesList: [...prev.vehiclesList, currentVehicleId],
+          anomaliesList: selectedExtinguisher.isNew ? [...prev.anomaliesList, {
+            vehicleId: currentVehicleId,
+            oldSerial: SYMBOL_VEHICLES.find(sv => sv.tempVehicleId === currentVehicleId)?.serialNumber || '---',
+            newSerial: selectedExtinguisher.serialNumber,
+            newMaterial: selectedExtinguisher.materialNumber,
+            itemName: selectedExtinguisher.name
+          }] : prev.anomaliesList
+        }));
+
+        // Check if this was the last vehicle
+        const updatedVehicles = symbolVehicles.map(v =>
+          v.tempVehicleId === currentVehicleId ? { ...v, isDone: true } : v
+        );
+        const allDone = updatedVehicles.every(v => v.isDone);
+
+        if (allDone) {
+          setCurrentStep(FlowStep.BATCH_SUMMARY);
+        } else {
+          setCurrentStep(FlowStep.SYMBOL_AUDIT_LIST);
+        }
+      } else {
+        setSelectedExtinguisher({ ...selectedExtinguisher, counters });
+        setCurrentStep(FlowStep.SUCCESS);
+      }
+    } else if (action === ActionType.COUNTER_REPORTING) {
+      setSelectedExtinguisher({
+        id: 'vehicle-meters',
+        name: 'מוני כלי',
+        serialNumber: currentVehicleId,
+        counters
+      });
+      setCurrentStep(FlowStep.SUCCESS);
+    }
   };
 
   const renderStep = () => {
@@ -160,22 +271,12 @@ const App: React.FC = () => {
       case FlowStep.DATA_ENTRY:
         return (
           <DataEntryScreen
-            onConfirm={(counters: CounterValue[]) => {
-              if (selectedExtinguisher) {
-                setSelectedExtinguisher({ ...selectedExtinguisher, counters });
-              } else if (action === ActionType.COUNTER_REPORTING) {
-                setSelectedExtinguisher({
-                  id: 'vehicle-meters',
-                  name: 'מוני כלי',
-                  serialNumber: currentVehicleId,
-                  counters
-                });
-              }
-              setCurrentStep(FlowStep.SUCCESS);
-            }}
+            onConfirm={handleDataEntryConfirm}
             onBack={() => {
               if (action === ActionType.DISASSEMBLE) {
                 setCurrentStep(FlowStep.DISASSEMBLE_REASON);
+              } else if (action === ActionType.SYMBOL_AUDIT) {
+                setCurrentStep(FlowStep.SYMBOL_AUDIT_LIST);
               } else if (action === ActionType.COUNTER_REPORTING) {
                 handleReset();
               } else {
@@ -195,6 +296,7 @@ const App: React.FC = () => {
             onBack={handleReset}
             vehicleId={currentVehicleId}
             storageLocation={storageLocation}
+            actionType={action}
           />
         );
       case FlowStep.AUDIT_SUMMARY:
@@ -215,6 +317,15 @@ const App: React.FC = () => {
         );
       case FlowStep.BATCH_SUMMARY:
         return <BatchSummaryScreen stats={batchStats} onFinish={handleReset} />;
+      case FlowStep.SYMBOL_AUDIT_LIST:
+        return (
+          <SymbolAuditListScreen
+            vehicles={symbolVehicles}
+            onSelectVehicle={handleSymbolVehicleSelect}
+            onBack={handleReset}
+            storageLocation={storageLocation}
+          />
+        );
       case FlowStep.SUCCESS:
         return (
           <SuccessScreen
@@ -271,7 +382,7 @@ const App: React.FC = () => {
               // Only 2 steps for counter reporting
             } else {
               if (stepIdx === 1) {
-                isActive = currentStep === FlowStep.IDENTIFY || currentStep === FlowStep.AUDIT_CHECK;
+                isActive = currentStep === FlowStep.IDENTIFY || currentStep === FlowStep.AUDIT_CHECK || currentStep === FlowStep.SYMBOL_AUDIT_LIST;
               } else if (stepIdx === 2) {
                 isActive = currentStep === FlowStep.DATA_ENTRY ||
                   currentStep === FlowStep.AUDIT_SUMMARY ||

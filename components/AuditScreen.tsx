@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Extinguisher, LocationStatus } from '../types';
+import { Extinguisher, LocationStatus, ActionType } from '../types';
 
 interface AuditScreenProps {
   items: Extinguisher[];
@@ -9,6 +9,7 @@ interface AuditScreenProps {
   onBack: () => void;
   vehicleId: string;
   storageLocation: string;
+  actionType: ActionType | null;
 }
 
 // Global pool with location metadata for auditing
@@ -37,8 +38,19 @@ const StatusBadge: React.FC<{ status?: LocationStatus; name?: string; storageLoc
   }
 };
 
-const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, onBack, vehicleId, storageLocation }) => {
+const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, onBack, vehicleId, storageLocation, actionType }) => {
   const [showSuggestionsFor, setShowSuggestionsFor] = useState<string | null>(null);
+  const [showMaterialSuggestionsFor, setShowMaterialSuggestionsFor] = useState<string | null>(null);
+
+  const MOCK_MATERIALS = [
+    { id: 'MAT-101', name: 'מטף אבקה 6 ק"ג' },
+    { id: 'MAT-202', name: 'מטף הלון 2.5 ק"ג' },
+    { id: 'MAT-909', name: 'מטף קצף 9 ליטר' },
+    { id: 'MAT-505', name: 'מטף פחמן דו-חמצני' },
+    { id: 'MAT-662', name: 'מטף אבקה 6 ק"ג (חדש)' },
+    { id: 'MAT-884', name: 'מטף הלון 2.5 ק"ג (מדגם ב)' },
+    { id: 'M-100', name: 'מטף ראשי' },
+  ];
 
   const toggleStatus = (id: string, status: 'ok' | 'anomaly') => {
     setItems(prev => prev.map(item =>
@@ -91,7 +103,9 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
     <div className="h-full flex flex-col animate-in fade-in slide-in-from-left-8 duration-500 overflow-hidden text-right">
       <div className="mb-6 flex items-start justify-between shrink-0">
         <div>
-          <h2 className="text-4xl font-black text-white leading-tight">מיפוי מטפים</h2>
+          <h2 className="text-4xl font-black text-white leading-tight">
+            {actionType === ActionType.SINGLE_VEHICLE_AUDIT ? 'מיפוי כלי בודד' : 'מיפוי סימול'}
+          </h2>
           <p className="text-slate-400 text-lg mt-1 font-bold italic">כלי: {vehicleId}</p>
         </div>
         <button onClick={onBack} className="p-4 bg-slate-800 rounded-2xl active:bg-slate-700 transition-colors shadow-lg">
@@ -169,7 +183,7 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
                         <span>SAP S/4HANA</span>
                       </div>
                       {GLOBAL_EXTINGUISHERS_POOL
-                        .filter(s => s.serialNumber?.toLowerCase().includes(item.actualSerialNumber!.toLowerCase()))
+                        .filter(s => s.serialNumber?.toLowerCase() === item.actualSerialNumber!.toLowerCase())
                         .map(suggestion => (
                           <button
                             key={suggestion.serialNumber}
@@ -209,14 +223,46 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
                         פריט לא מוכר - חובה להזין מק"ט (MATERIAL):
                       </label>
                     </div>
-                    <input
-                      type="text"
-                      placeholder="הזן מספר מק״ט של המטף שנמצא..."
-                      value={item.actualMaterialNumber || ''}
-                      onFocus={() => setShowSuggestionsFor(null)} // Hide serial suggestions while typing material
-                      onChange={(e) => updateActualMaterial(item.id, e.target.value)}
-                      className="w-full bg-slate-950 border-2 border-orange-500/60 rounded-2xl p-4 text-xl font-bold text-white outline-none focus:border-orange-400 transition-all placeholder:text-slate-800"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="הזן מספר מק״ט של המטף שנמצא..."
+                        value={item.actualMaterialNumber || ''}
+                        onFocus={() => {
+                          setShowSuggestionsFor(null);
+                          setShowMaterialSuggestionsFor(item.id);
+                        }}
+                        onBlur={() => setTimeout(() => setShowMaterialSuggestionsFor(null), 200)}
+                        onChange={(e) => {
+                          updateActualMaterial(item.id, e.target.value);
+                          setShowMaterialSuggestionsFor(item.id);
+                        }}
+                        className="w-full bg-slate-950 border-2 border-orange-500/60 rounded-2xl p-4 text-xl font-bold text-white outline-none focus:border-orange-400 transition-all placeholder:text-slate-800"
+                      />
+
+                      {/* Material Suggestions Overlay */}
+                      {showMaterialSuggestionsFor === item.id && item.actualMaterialNumber && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border-2 border-orange-500/30 rounded-2xl overflow-hidden shadow-2xl z-[30] animate-in fade-in slide-in-from-top-2 max-h-40 overflow-y-auto scrollbar-hide">
+                          <div className="bg-slate-800 px-3 py-1 text-[9px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">מק"טים מוכרים</div>
+                          {MOCK_MATERIALS
+                            .filter(m => m.id.toLowerCase().includes(item.actualMaterialNumber!.toLowerCase()) || m.name.includes(item.actualMaterialNumber!))
+                            .map(m => (
+                              <button
+                                key={m.id}
+                                onMouseDown={() => {
+                                  updateActualMaterial(item.id, m.id);
+                                  setShowMaterialSuggestionsFor(null);
+                                }}
+                                className="w-full p-3 text-right hover:bg-orange-500/10 text-white border-b border-white/5 last:border-0 transition-colors flex flex-col items-end"
+                              >
+                                <span className="font-black text-base">{m.id}</span>
+                                <span className="text-slate-400 text-[10px] font-bold">{m.name}</span>
+                              </button>
+                            ))
+                          }
+                        </div>
+                      )}
+                    </div>
                     <p className="mt-2 text-[10px] text-orange-500/60 font-bold italic mr-1">המטף יירשם במערכת SAP כפריט חדש המשויך לכלי זה.</p>
                   </div>
                 )}

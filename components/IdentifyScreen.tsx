@@ -44,14 +44,25 @@ const IdentifyScreen: React.FC<IdentifyScreenProps> = ({ extinguishers, inventor
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean | null>(extinguishers.length > 0 ? null : false);
   const [pendingExt, setPendingExt] = useState<Extinguisher | null>(null);
+  const [showMaterialSuggestions, setShowMaterialSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const MOCK_MATERIALS = useMemo(() => [
+    { id: 'MAT-101', name: 'מטף אבקה 6 ק"ג' },
+    { id: 'MAT-202', name: 'מטף הלון 2.5 ק"ג' },
+    { id: 'MAT-909', name: 'מטף קצף 9 ליטר' },
+    { id: 'MAT-505', name: 'מטף פחמן דו-חמצני' },
+    { id: 'MAT-662', name: 'מטף אבקה 6 ק"ג (חדש)' },
+    { id: 'MAT-884', name: 'מטף הלון 2.5 ק"ג (מדגם ב)' },
+    { id: 'M-100', name: 'מטף ראשי' },
+  ], []);
 
   const suggestions = useMemo(() => {
     const term = manualSerial.toLowerCase();
     if (!term || term.length < 1) return [];
 
     return GLOBAL_POOL.filter(item => {
-      const matches = item.serialNumber?.toLowerCase().includes(term);
+      const matches = item.serialNumber?.toLowerCase() === term;
       // Logic fix: In ASSEMBLE flow, do not show items already on the current vehicle
       if (actionType === ActionType.ASSEMBLE && item.locationStatus === 'current_vehicle') {
         return false;
@@ -59,6 +70,12 @@ const IdentifyScreen: React.FC<IdentifyScreenProps> = ({ extinguishers, inventor
       return matches;
     });
   }, [manualSerial, actionType]);
+
+  const materialSuggestions = useMemo(() => {
+    const term = manualMaterial.toLowerCase();
+    if (!term) return [];
+    return MOCK_MATERIALS.filter(m => m.id.toLowerCase().includes(term) || m.name.includes(term));
+  }, [manualMaterial, MOCK_MATERIALS]);
 
   const checkLocationAndProceed = (ext: Extinguisher) => {
     let needsConfirmation = false;
@@ -281,7 +298,7 @@ const IdentifyScreen: React.FC<IdentifyScreenProps> = ({ extinguishers, inventor
               <div className="flex items-center justify-between mb-4 md:mb-6">
                 <label className="block text-orange-400 font-black mr-2 text-base md:text-xl uppercase tracking-tight">
                   {isNewItem
-                    ? 'פריט לא נמצא - חובה להזין מק"ט'
+                    ? 'פריט לא נמצא - הזנת מק"ט תיצור פריט חדש'
                     : actionType === ActionType.DISASSEMBLE
                       ? 'הזן מס"ד של המטף שמותקן בפועל:'
                       : 'הזן מס"ד של המטף להרכבה:'}
@@ -359,24 +376,51 @@ const IdentifyScreen: React.FC<IdentifyScreenProps> = ({ extinguishers, inventor
 
                 {/* New Item - Material Number Field Flow */}
                 {isNewItem && (
-                  <div className="flex gap-2 animate-in slide-in-from-top-4 duration-300">
-                    <input
-                      type="text"
-                      autoFocus
-                      value={manualMaterial}
-                      onChange={(e) => setManualMaterial(e.target.value)}
-                      placeholder="הזן מספר מק״ט (Material)..."
-                      className="flex-1 min-w-0 bg-slate-950 border-2 border-orange-500 rounded-2xl p-3 md:p-4 text-lg md:text-xl font-bold text-white outline-none focus:ring-4 focus:ring-orange-500/20"
-                    />
-                    <button
-                      onClick={handleManualSubmit}
-                      disabled={!manualMaterial.trim()}
-                      className="bg-emerald-500 disabled:bg-slate-700 text-white px-4 md:px-6 rounded-2xl active:scale-95 transition-all shadow-lg shrink-0"
-                    >
-                      <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
+                  <div className="flex flex-col gap-2 animate-in slide-in-from-top-4 duration-300 relative">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        autoFocus
+                        value={manualMaterial}
+                        onFocus={() => setShowMaterialSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowMaterialSuggestions(false), 200)}
+                        onChange={(e) => {
+                          setManualMaterial(e.target.value);
+                          setShowMaterialSuggestions(true);
+                        }}
+                        placeholder="הזן מק״ט ליצירת פריט חדש..."
+                        className="flex-1 min-w-0 bg-slate-950 border-2 border-orange-500 rounded-2xl p-3 md:p-4 text-lg md:text-xl font-bold text-white outline-none focus:ring-4 focus:ring-orange-500/20"
+                      />
+                      <button
+                        onClick={handleManualSubmit}
+                        disabled={!manualMaterial.trim()}
+                        className="bg-emerald-500 disabled:bg-slate-700 text-white px-4 md:px-6 rounded-2xl active:scale-95 transition-all shadow-lg shrink-0"
+                      >
+                        <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Material Suggestions Overlay */}
+                    {showMaterialSuggestions && materialSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border-2 border-orange-500/30 rounded-2xl overflow-hidden shadow-2xl z-[60] animate-in fade-in slide-in-from-top-2 max-h-48 overflow-y-auto scrollbar-hide">
+                        <div className="bg-slate-800 px-4 py-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">מק"טים מוכרים</div>
+                        {materialSuggestions.map((m) => (
+                          <button
+                            key={m.id}
+                            onMouseDown={() => {
+                              setManualMaterial(m.id);
+                              setShowMaterialSuggestions(false);
+                            }}
+                            className="w-full p-4 text-right hover:bg-orange-500/10 text-white border-b border-white/5 last:border-0 transition-colors flex flex-col items-end"
+                          >
+                            <span className="font-black text-lg">{m.id}</span>
+                            <span className="text-slate-400 text-xs font-bold">{m.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

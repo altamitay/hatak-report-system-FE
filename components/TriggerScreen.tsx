@@ -123,34 +123,51 @@ const TriggerScreen: React.FC<TriggerScreenProps> = ({ onSelect, installedHatak,
         </button>
 
         <button
-          onClick={() => onSelect(ActionType.AUDIT)}
+          onClick={() => onSelect(ActionType.SINGLE_VEHICLE_AUDIT)}
           className="group relative flex flex-col items-center justify-center p-4 bg-white/5 backdrop-blur-xl border-2 border-white/10 rounded-2xl active:scale-[0.98] active:bg-blue-600 active:border-blue-400 transition-all shadow-xl overflow-hidden aspect-square"
         >
           <div className="absolute inset-0 bg-gradient-to-b from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="w-14 h-14 mb-3 bg-blue-500/20 rounded-xl flex items-center justify-center group-active:bg-white/20 shrink-0 backdrop-blur-md border border-blue-500/30">
             <svg className="w-10 h-10 text-blue-500 group-active:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
           <div className="text-center relative z-10">
-            <span className="block text-lg font-black text-white leading-tight">מיפוי</span>
-            <span className="text-slate-400 text-[10px] font-bold group-active:text-white/80 opacity-70">בדיקת מלאי</span>
+            <span className="block text-lg font-black text-white leading-tight">מיפוי כלי בודד</span>
+            <span className="text-slate-400 text-[10px] font-bold group-active:text-white/80 opacity-70">בדיקת מלאי בתיקן</span>
           </div>
         </button>
 
         <button
-          onClick={() => onSelect(ActionType.COUNTER_REPORTING)}
-          className="group relative flex flex-col items-center justify-center p-4 bg-white/5 backdrop-blur-xl border-2 border-white/10 rounded-2xl active:scale-[0.98] active:bg-violet-600 active:border-violet-400 transition-all shadow-xl overflow-hidden aspect-square"
+          onClick={() => onSelect(ActionType.SYMBOL_AUDIT)}
+          className="group relative flex flex-col items-center justify-center p-4 bg-white/5 backdrop-blur-xl border-2 border-white/10 rounded-2xl active:scale-[0.98] active:bg-cyan-600 active:border-cyan-400 transition-all shadow-xl overflow-hidden aspect-square"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="w-14 h-14 mb-3 bg-violet-500/20 rounded-xl flex items-center justify-center group-active:bg-white/20 shrink-0 backdrop-blur-md border border-violet-500/30">
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="w-14 h-14 mb-3 bg-cyan-500/20 rounded-xl flex items-center justify-center group-active:bg-white/20 shrink-0 backdrop-blur-md border border-cyan-500/30">
+            <svg className="w-10 h-10 text-cyan-500 group-active:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <div className="text-center relative z-10">
+            <span className="block text-lg font-black text-white leading-tight">מיפוי סימול</span>
+            <span className="text-slate-400 text-[10px] font-bold group-active:text-white/80 opacity-70">מיפוי רב-ערכי</span>
+          </div>
+        </button>
+
+        {/* Full width row for the last button for better layout balance */}
+        <button
+          onClick={() => onSelect(ActionType.COUNTER_REPORTING)}
+          className="col-span-2 group relative flex items-center p-4 bg-white/5 backdrop-blur-xl border-2 border-white/10 rounded-2xl active:scale-[0.98] active:bg-violet-600 active:border-violet-400 transition-all shadow-xl overflow-hidden h-24"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="w-14 h-14 mb-0 bg-violet-500/20 rounded-xl flex items-center justify-center group-active:bg-white/20 shrink-0 backdrop-blur-md border border-violet-500/30 ml-4">
             <svg className="w-10 h-10 text-violet-500 group-active:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <div className="text-center relative z-10">
-            <span className="block text-lg font-black text-white leading-tight">דיווח מונים</span>
-            <span className="text-slate-400 text-[10px] font-bold group-active:text-white/80 opacity-70">שע"מ וק"מ</span>
+          <div className="text-right relative z-10 flex-1">
+            <span className="block text-xl font-black text-white leading-tight">דיווח מונים</span>
+            <span className="text-slate-400 text-[10px] font-bold group-active:text-white/80 opacity-70">עדכון שע"מ וק"מ</span>
           </div>
         </button>
       </div>
