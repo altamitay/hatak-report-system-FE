@@ -11,6 +11,7 @@ import NextVehicleScreen from './components/NextVehicleScreen';
 import BatchSummaryScreen from './components/BatchSummaryScreen';
 import DisassembleReasonScreen from './components/DisassembleReasonScreen';
 import SymbolAuditListScreen from './components/SymbolAuditListScreen';
+import MappingSummaryScreen from './components/MappingSummaryScreen';
 
 interface SymbolVehicle extends Extinguisher {
   tempVehicleId: string;
@@ -58,6 +59,8 @@ const App: React.FC = () => {
     anomaliesList: []
   });
   const [storageLocation, setStorageLocation] = useState('A102');
+  const [lastAuditAnomalies, setLastAuditAnomalies] = useState<AnomalyDetail[]>([]);
+  const [lastAuditCounters, setLastAuditCounters] = useState<CounterValue[]>([]);
   const [lastAction, setLastAction] = useState<LastAction | null>({
     type: 'דווחה החלפה',
     timestamp: '05/03/2026, 11:20',
@@ -139,9 +142,13 @@ const App: React.FC = () => {
       vehicleId: currentVehicleId,
       oldSerial: e.serialNumber,
       newSerial: e.actualSerialNumber || '---',
+      oldMaterial: e.materialNumber,
       newMaterial: e.actualMaterialNumber,
       itemName: e.name
     }));
+
+    setLastAuditAnomalies(newAnomalyDetails);
+    setLastAuditCounters(counters);
 
     setBatchStats(prev => {
       const updatedStats = {
@@ -179,6 +186,8 @@ const App: React.FC = () => {
       vehiclesList: [],
       anomaliesList: []
     });
+    setLastAuditAnomalies([]);
+    setLastAuditCounters([]);
     setCurrentStep(FlowStep.TRIGGER);
   };
 
@@ -316,6 +325,17 @@ const App: React.FC = () => {
           />
         );
       case FlowStep.BATCH_SUMMARY:
+        if (action === ActionType.SINGLE_VEHICLE_AUDIT) {
+          return (
+            <MappingSummaryScreen
+              vehicleId={currentVehicleId}
+              anomalies={lastAuditAnomalies}
+              counters={lastAuditCounters}
+              onNext={handleNewVehicle}
+              onFinish={handleReset}
+            />
+          );
+        }
         return <BatchSummaryScreen stats={batchStats} onFinish={handleReset} />;
       case FlowStep.SYMBOL_AUDIT_LIST:
         return (

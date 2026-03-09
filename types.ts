@@ -50,6 +50,7 @@ export interface AnomalyDetail {
   vehicleId: string;
   oldSerial: string;
   newSerial: string;
+  oldMaterial?: string;
   newMaterial?: string;
   itemName: string;
 }

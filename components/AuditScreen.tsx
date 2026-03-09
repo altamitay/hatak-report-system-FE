@@ -56,6 +56,12 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
     setItems(prev => prev.map(item =>
       item.id === id ? { ...item, status, actualSerialNumber: status === 'ok' ? '' : item.actualSerialNumber, actualMaterialNumber: '' } : item
     ));
+    
+    if (status === 'ok' && actionType === ActionType.SINGLE_VEHICLE_AUDIT) {
+      onFinish();
+      return;
+    }
+
     if (status === 'anomaly') {
       setShowSuggestionsFor(id);
     } else {
@@ -266,20 +272,40 @@ const AuditScreen: React.FC<AuditScreenProps> = ({ items, setItems, onFinish, on
                     <p className="mt-2 text-[10px] text-orange-500/60 font-bold italic mr-1">המטף יירשם במערכת SAP כפריט חדש המשויך לכלי זה.</p>
                   </div>
                 )}
+
+                {/* Confirm Anomaly Button - Only for Single Vehicle Audit */}
+                {actionType === ActionType.SINGLE_VEHICLE_AUDIT && (
+                   <button
+                     disabled={!(item.actualSerialNumber && item.actualSerialNumber.trim().length > 0 && (!isNewItem(item.actualSerialNumber) || (item.actualMaterialNumber && item.actualMaterialNumber.length >= 1)))}
+                     onClick={onFinish}
+                     className={`w-full py-4 mt-2 rounded-2xl text-xl font-black transition-all shadow-lg flex items-center justify-center gap-2 ${
+                       (item.actualSerialNumber && item.actualSerialNumber.trim().length > 0 && (!isNewItem(item.actualSerialNumber) || (item.actualMaterialNumber && item.actualMaterialNumber.length >= 1)))
+                       ? 'bg-red-500 text-white shadow-red-500/20 border-b-4 border-red-700 active:translate-y-1 active:border-b-0' 
+                       : 'bg-white/5 text-slate-700 grayscale cursor-not-allowed opacity-40'
+                     }`}
+                   >
+                     <span>דווח החלפה והמשך</span>
+                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                     </svg>
+                   </button>
+                )}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      <button
-        disabled={!allChecked}
-        onClick={onFinish}
-        className={`mt-6 w-full py-6 shrink-0 rounded-3xl text-2xl font-black transition-all shadow-xl ${allChecked ? 'bg-orange-500 text-white shadow-orange-500/20 border-b-4 border-orange-700 active:translate-y-1 active:border-b-0 cursor-pointer' : 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed opacity-50'
-          }`}
-      >
-        סיום מיפוי והמשך
-      </button>
+      {actionType !== ActionType.SINGLE_VEHICLE_AUDIT && (
+        <button
+          disabled={!allChecked}
+          onClick={onFinish}
+          className={`mt-6 w-full py-6 shrink-0 rounded-3xl text-2xl font-black transition-all shadow-xl ${allChecked ? 'bg-orange-500 text-white shadow-orange-500/20 border-b-4 border-orange-700 active:translate-y-1 active:border-b-0 cursor-pointer' : 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed opacity-50'
+            }`}
+        >
+          סיום מיפוי והמשך
+        </button>
+      )}
     </div>
   );
 };
